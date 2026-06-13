@@ -4,10 +4,11 @@
 <meta charset="UTF-8">
 
 <meta name="viewport"
-content="width=device-width,
-initial-scale=1,
-maximum-scale=1,
-user-scalable=no">
+content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#0066cc">
 
 <title>そうすけの大漁チャレンジ</title>
 
@@ -19,7 +20,7 @@ html,body{
     overflow:hidden;
     touch-action:none;
     font-family:sans-serif;
-    background:black;
+    background:#000;
 }
 
 #game{
@@ -37,133 +38,91 @@ html,body{
 }
 
 #player{
-
     position:absolute;
+    bottom:40px;
+    left:50%;
+    transform:translateX(-50%);
 
-    left:42%;
-    bottom:120px;
+    width:90px;
+    height:90px;
 
-    width:110px;
-    height:150px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
 
-    border-radius:50%;
+    font-size:70px;
+
+    z-index:50;
 }
 
-.fish{
-
+.item{
     position:absolute;
-
-    font-size:60px;
-
-    filter:
-    drop-shadow(2px 2px 2px black);
-
+    font-size:48px;
     user-select:none;
-}
-
-.bomb{
-
-    position:absolute;
-
-    font-size:55px;
-
-    user-select:none;
+    z-index:40;
 }
 
 #score{
-
     position:absolute;
-
     top:15px;
     left:15px;
-
     color:white;
-
     font-size:32px;
-
     font-weight:bold;
-
-    text-shadow:
-    2px 2px 5px black;
-
+    text-shadow:2px 2px 5px black;
     z-index:100;
 }
 
 #high{
-
     position:absolute;
-
     top:55px;
     left:15px;
-
     color:gold;
-
     font-size:20px;
-
     font-weight:bold;
-
-    text-shadow:
-    2px 2px 5px black;
-
+    text-shadow:2px 2px 5px black;
     z-index:100;
 }
 
 #timer{
-
     position:absolute;
-
     top:15px;
     right:15px;
-
     color:white;
-
     font-size:32px;
-
     font-weight:bold;
-
-    text-shadow:
-    2px 2px 5px black;
-
+    text-shadow:2px 2px 5px black;
     z-index:100;
 }
 
 #startScreen{
-
     position:absolute;
+    inset:0;
 
-    width:100%;
-    height:100%;
-
-    background:
-    rgba(0,0,0,0.5);
+    background:rgba(0,0,0,0.55);
 
     display:flex;
-
     flex-direction:column;
-
     justify-content:center;
-
     align-items:center;
 
     color:white;
-
     z-index:200;
 }
 
 button{
-
-    font-size:28px;
-
-    padding:15px 35px;
-
+    font-size:24px;
+    padding:14px 28px;
     border:none;
+    border-radius:14px;
+}
 
-    border-radius:15px;
+h1{
+    text-align:center;
 }
 
 </style>
 </head>
-
 <body>
 
 <div id="game">
@@ -171,22 +130,18 @@ button{
 <img id="bg" src="family.jpg">
 
 <div id="score">🐟 0</div>
-
 <div id="high"></div>
-
 <div id="timer">30</div>
 
-<div id="player"></div>
+<div id="player">🧒</div>
 
 <div id="startScreen">
 
 <h1>そうすけの大漁チャレンジ</h1>
 
-<p>タップでジャンプ！</p>
-
 <p>魚を集めよう！</p>
-
-<p>💣は危険！</p>
+<p>カニは減点！</p>
+<p>タップした場所へ移動！</p>
 
 <button onclick="startGame()">
 スタート
@@ -198,222 +153,181 @@ button{
 
 <script>
 
-const player =
-document.getElementById("player");
+const game = document.getElementById("game");
+const player = document.getElementById("player");
 
-const game =
-document.getElementById("game");
+const scoreText = document.getElementById("score");
+const timerText = document.getElementById("timer");
+const highText = document.getElementById("high");
 
-const scoreText =
-document.getElementById("score");
+let score = 0;
+let time = 30;
+let running = false;
 
-const timerText =
-document.getElementById("timer");
-
-const highText =
-document.getElementById("high");
-
-let score=0;
-let time=30;
-
-let y=120;
-let velocity=0;
-let jumping=false;
-
-let gameRunning=false;
-
-let fishSpawner;
-let bombSpawner;
+let spawnInterval;
 let timerInterval;
 
 let highScore =
-localStorage.getItem("sosukeHigh") || 0;
+parseInt(localStorage.getItem("sosukeHigh") || "0");
 
 highText.innerText =
 "🏆 " + highScore;
 
-function jump(){
-
-    if(!gameRunning) return;
-
-    if(!jumping){
-
-        velocity=18;
-        jumping=true;
-
-    }
+function updateScore(){
+    scoreText.innerText =
+    "🐟 " + score;
 }
 
-document.addEventListener(
-"touchstart",
-jump
-);
+game.addEventListener("touchstart",(e)=>{
 
-document.addEventListener(
-"click",
-jump
-);
+    if(!running) return;
 
-function update(){
+    const x =
+    e.touches[0].clientX;
 
-    velocity-=0.9;
+    player.style.left = x + "px";
+});
 
-    y+=velocity;
+game.addEventListener("click",(e)=>{
 
-    if(y<120){
+    if(!running) return;
 
-        y=120;
+    player.style.left =
+    e.clientX + "px";
+});
 
-        velocity=0;
+function createItem(){
 
-        jumping=false;
-    }
-
-    player.style.bottom =
-    y+"px";
-
-    requestAnimationFrame(update);
-}
-
-update();
-
-function spawnFish(){
-
-    const fish =
+    const item =
     document.createElement("div");
 
-    fish.className="fish";
+    item.className = "item";
 
-    fish.innerHTML="🐟";
+    let type;
 
-    fish.style.left="-100px";
+    if(score > 0 && score % 10 === 0 && Math.random() < 0.25){
 
-    fish.style.top=
-    (100+
-    Math.random()*450)
-    +"px";
+        type = "boss";
+        item.innerHTML = "🐋";
 
-    game.appendChild(fish);
+    }else{
 
-    let x=-100;
+        const r = Math.random();
 
-    let speed=
-    4+
-    Math.random()*5;
+        if(r < 0.75){
 
-    const move=
-    setInterval(()=>{
+            const fishes = [
+            "🐟",
+            "🐠",
+            "🐡",
+            "🦑"
+            ];
 
-        x+=speed;
+            item.innerHTML =
+            fishes[
+            Math.floor(Math.random()*fishes.length)
+            ];
 
-        fish.style.left=
-        x+"px";
-
-        hitCheck(
-        fish,
-        move,
-        true
-        );
-
-        if(
-        x>
-        window.innerWidth+100
-        ){
-            fish.remove();
-            clearInterval(move);
-        }
-
-    },16);
-}
-
-function spawnBomb(){
-
-    const bomb=
-    document.createElement("div");
-
-    bomb.className="bomb";
-
-    bomb.innerHTML="🦀";
-
-    bomb.style.left=
-    window.innerWidth+"px";
-
-    bomb.style.top=
-    (150+
-    Math.random()*400)
-    +"px";
-
-    game.appendChild(bomb);
-
-    let x=
-    window.innerWidth;
-
-    let speed=
-    5+
-    Math.random()*4;
-
-    const move=
-    setInterval(()=>{
-
-        x-=speed;
-
-        bomb.style.left=
-        x+"px";
-
-        hitCheck(
-        bomb,
-        move,
-        false
-        );
-
-        if(x<-100){
-
-            bomb.remove();
-
-            clearInterval(move);
-        }
-
-    },16);
-}
-
-function hitCheck(
-obj,
-interval,
-isFish
-){
-
-    const r1=
-    obj.getBoundingClientRect();
-
-    const r2=
-    player.getBoundingClientRect();
-
-    if(
-    r1.left<r2.right &&
-    r1.right>r2.left &&
-    r1.top<r2.bottom &&
-    r1.bottom>r2.top
-    ){
-
-        if(isFish){
-
-            score++;
+            type = "fish";
 
         }else{
 
-            score=
-            Math.max(
-            0,
-            score-3
-            );
+            item.innerHTML = "🦀";
+            type = "crab";
+        }
+    }
+
+    item.dataset.type = type;
+
+    item.style.left =
+    Math.random() *
+    (window.innerWidth - 60)
+    + "px";
+
+    item.style.top = "-80px";
+
+    game.appendChild(item);
+
+    let y = -80;
+
+    const speed =
+    3 + Math.random()*4;
+
+    const move =
+    setInterval(()=>{
+
+        if(!running){
+            clearInterval(move);
+            item.remove();
+            return;
         }
 
-        scoreText.innerText=
-        "🐟 "+score;
+        y += speed;
 
-        obj.remove();
+        item.style.top =
+        y + "px";
 
-        clearInterval(interval);
+        checkCollision(
+        item,
+        move
+        );
+
+        if(y >
+        window.innerHeight+100){
+
+            clearInterval(move);
+            item.remove();
+        }
+
+    },16);
+}
+
+function checkCollision(
+item,
+move
+){
+
+    const a =
+    item.getBoundingClientRect();
+
+    const b =
+    player.getBoundingClientRect();
+
+    if(
+        a.left < b.right &&
+        a.right > b.left &&
+        a.top < b.bottom &&
+        a.bottom > b.top
+    ){
+
+        const type =
+        item.dataset.type;
+
+        if(type==="fish"){
+
+            score += 1;
+
+        }else if(type==="crab"){
+
+            score =
+            Math.max(
+            0,
+            score - 3
+            );
+
+        }else if(type==="boss"){
+
+            score += 5;
+        }
+
+        updateScore();
+
+        if(navigator.vibrate){
+            navigator.vibrate(50);
+        }
+
+        clearInterval(move);
+        item.remove();
     }
 }
 
@@ -423,44 +337,35 @@ function startGame(){
     .getElementById(
     "startScreen"
     )
-    .style.display="none";
+    .style.display = "none";
 
-    score=0;
+    score = 0;
+    time = 30;
 
-    time=30;
+    updateScore();
 
-    gameRunning=true;
+    timerText.innerText =
+    time;
 
-    scoreText.innerText=
-    "🐟 0";
+    running = true;
 
-    timerText.innerText=
-    "30";
-
-    fishSpawner=
+    spawnInterval =
     setInterval(
-    spawnFish,
-    900
+    createItem,
+    700
     );
 
-    bombSpawner=
-    setInterval(
-    spawnBomb,
-    2500
-    );
-
-    timerInterval=
+    timerInterval =
     setInterval(()=>{
 
         time--;
 
-        timerText.innerText=
+        timerText.innerText =
         time;
 
         if(time<=0){
 
             endGame();
-
         }
 
     },1000);
@@ -468,52 +373,45 @@ function startGame(){
 
 function endGame(){
 
-    gameRunning=false;
+    running = false;
 
     clearInterval(
-    fishSpawner
-    );
-
-    clearInterval(
-    bombSpawner
+    spawnInterval
     );
 
     clearInterval(
     timerInterval
     );
 
-    if(score>highScore){
+    if(score > highScore){
 
-        highScore=score;
+        highScore = score;
 
         localStorage.setItem(
         "sosukeHigh",
-        score
+        highScore
         );
     }
 
-    highText.innerText=
-    "🏆 "+highScore;
+    highText.innerText =
+    "🏆 " + highScore;
 
-    setTimeout(()=>{
+    const title =
+    document.querySelector(
+    "#startScreen h1"
+    );
 
-        document
-        .getElementById(
-        "startScreen"
-        )
-        .style.display=
-        "flex";
+    title.innerHTML =
+    "終了！<br>" +
+    score +
+    "ポイント";
 
-        document
-        .querySelector(
-        "#startScreen h1"
-        )
-        .innerHTML=
-        "終了！<br>" +
-        score +
-        "匹ゲット！";
-
-    },500);
+    document
+    .getElementById(
+    "startScreen"
+    )
+    .style.display =
+    "flex";
 }
 
 </script>
