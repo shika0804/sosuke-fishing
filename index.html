@@ -42,17 +42,27 @@ html,body{
     bottom:40px;
     left:50%;
     transform:translateX(-50%);
-
     width:90px;
     height:90px;
-
     display:flex;
     justify-content:center;
     align-items:center;
-
     font-size:70px;
-
     z-index:50;
+    transition:transform 0.15s ease;
+    filter:drop-shadow(2px 2px 4px rgba(0,0,0,0.6));
+}
+
+@keyframes catchFish{
+    0%{
+        transform:translateX(-50%) rotate(0deg);
+    }
+    50%{
+        transform:translateX(-50%) rotate(-25deg);
+    }
+    100%{
+        transform:translateX(-50%) rotate(0deg);
+    }
 }
 
 .item{
@@ -133,7 +143,7 @@ h1{
 <div id="high"></div>
 <div id="timer">30</div>
 
-<div id="player">🧒</div>
+<div id="player">🎣</div>
 
 <div id="startScreen">
 
@@ -267,17 +277,64 @@ function createItem(){
         item.style.top =
         y + "px";
 
-        checkCollision(
-        item,
-        move
-        );
+       function checkCollision(item,move){
 
-        if(y >
-        window.innerHeight+100){
+    const a=item.getBoundingClientRect();
+    const b=player.getBoundingClientRect();
 
-            clearInterval(move);
-            item.remove();
+    if(
+        a.left<b.right &&
+        a.right>b.left &&
+        a.top<b.bottom &&
+        a.bottom>b.top
+    ){
+
+        const type=item.dataset.type;
+
+        if(type==="fish"){
+
+            score+=1;
+
+            player.style.animation="catchFish 0.15s ease";
+
+            setTimeout(()=>{
+                player.style.animation="";
+            },150);
+
+            if(navigator.vibrate){
+                navigator.vibrate(30);
+            }
+
+        }else if(type==="crab"){
+
+            score=Math.max(0,score-3);
+
+            if(navigator.vibrate){
+                navigator.vibrate([30,30,30]);
+            }
+
+        }else if(type==="boss"){
+
+            score+=5;
+
+            player.style.animation="catchFish 0.25s ease";
+
+            setTimeout(()=>{
+                player.style.animation="";
+            },250);
+
+            if(navigator.vibrate){
+                navigator.vibrate(150);
+            }
         }
+
+        updateScore();
+
+        clearInterval(move);
+
+        item.remove();
+    }
+}
 
     },16);
 }
